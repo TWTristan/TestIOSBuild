@@ -1,6 +1,7 @@
 using System;
 using TinyWizard.Utilities;
 using UnityEditor;
+using UnityEngine;
 
 namespace TinyWizard.Core
 {
@@ -9,6 +10,8 @@ namespace TinyWizard.Core
         public static void BuildIOS()
         {
             var args = new Args(Environment.GetCommandLineArgs());
+
+            Debug.Log($"Building {args.Get<BuildTarget>("buildTarget")} at {args.Get("buildPath")}.");
 
             BuildPipeline.BuildPlayer(new BuildPlayerOptions()
             {

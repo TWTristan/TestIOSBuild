@@ -1,18 +1,18 @@
 pipeline {
     parameters {
         choice(name: 'TYPE', choices: ['WindowsDevelop', 'WindowsRelease', 'WindowsStaging', 'AndroidDevelop', 'AndroidRelease', 'AndroidStaging', 'IOSDevelop', 'IOSRelease', 'IOSStaging']) // 'LinuxDevelop', 'LinuxRelease', 'LinuxStaging'
-        string(name: 'BRANCH', defaultValue: 'dev', trim: true, description: "Case is most likely important.")
-        choice(name: 'SCRIPTING', choices: ['IL2CPP', 'Default', 'Mono2x'], description: "This overrides the scripting backend. Default will use whatever is in the build configs.")
-        choice(name: 'SUBTARGET', choices: ['Player', 'Server'])
+        string(name: 'BRANCH', defaultValue: 'main', trim: true, description: "Case is most likely important.")
+        // choice(name: 'SCRIPTING', choices: ['IL2CPP', 'Default', 'Mono2x'], description: "This overrides the scripting backend. Default will use whatever is in the build configs.")
+        // choice(name: 'SUBTARGET', choices: ['Player', 'Server'])
         booleanParam(name: 'BUILD', defaultValue: true, description: 'Whether or not to build the unity project.')
-        booleanParam(name: 'ADDRESSABLES', defaultValue: true, description: 'Whether or not to build and upload addressables.')
-        persistentString(name: 'ADDRESSABLE_URL', defaultValue: "https://twbr-addressables.s3.eu-west-2.amazonaws.com", successfulOnly: false)
-        persistentString(name: 'ADDRESSABLE_VERSION', defaultValue: "000001", description: 'Only update the version when addressable changes are made that are not backwards compatible.', successfulOnly: false)
-        booleanParam(name: 'DEEP_PROFILING_SUPPORT', defaultValue: false, description: 'Whether or not to add support for deep profiling to the build.')
-        booleanParam(name: 'WAIT_FOR_DEBUGGER', defaultValue: false, description: 'The build will wait to start until a debugger is attached or you click continue. Allows you to debug the start of the game.')
-        booleanParam(name: 'DEPLOY', defaultValue: false, description: 'Deploys to the store. Does not submit for review or set live.')
+        // booleanParam(name: 'ADDRESSABLES', defaultValue: true, description: 'Whether or not to build and upload addressables.')
+        // persistentString(name: 'ADDRESSABLE_URL', defaultValue: "https://twbr-addressables.s3.eu-west-2.amazonaws.com", successfulOnly: false)
+        // persistentString(name: 'ADDRESSABLE_VERSION', defaultValue: "000001", description: 'Only update the version when addressable changes are made that are not backwards compatible.', successfulOnly: false)
+        // booleanParam(name: 'DEEP_PROFILING_SUPPORT', defaultValue: false, description: 'Whether or not to add support for deep profiling to the build.')
+        // booleanParam(name: 'WAIT_FOR_DEBUGGER', defaultValue: false, description: 'The build will wait to start until a debugger is attached or you click continue. Allows you to debug the start of the game.')
+        // booleanParam(name: 'DEPLOY', defaultValue: false, description: 'Deploys to the store. Does not submit for review or set live.')
         booleanParam(name: 'CLEAN', defaultValue: false, description: 'Rebuilds the library. Will take a long time.')
-        booleanParam(name: 'NOTIFY', defaultValue: true, description: 'If true, build notifications are sent to discord.')
+        // booleanParam(name: 'NOTIFY', defaultValue: true, description: 'If true, build notifications are sent to discord.')
         booleanParam(name: 'POST_CLEANUP', defaultValue: true, description: 'If true, removes leftover artifacts and cache files after a build.')
     }
     agent none
@@ -44,9 +44,9 @@ pipeline {
                     BUILD_DISPLAY_NUMBER = BUILD_NUMBER.toString().padLeft(5, "0")
                     def branchName = params.BRANCH.replace("dev-TWBR-", "").replace("-", "_")
                     if(branchName == "dev") {
-                        currentBuild.displayName = "TimelessRivals_${params.TYPE}_${BUILD_DISPLAY_NUMBER}"
+                        currentBuild.displayName = "TestIOSBuild_${params.TYPE}_${BUILD_DISPLAY_NUMBER}"
                     } else {
-                        currentBuild.displayName = "TimelessRivals_${branchName}_${params.TYPE}_${BUILD_DISPLAY_NUMBER}"
+                        currentBuild.displayName = "TestIOSBuild_${branchName}_${params.TYPE}_${BUILD_DISPLAY_NUMBER}"
                     }
                     if(params.NOTIFY) {
                         if(params.SUBTARGET == "Player") {
@@ -184,21 +184,21 @@ pipeline {
                             BUILD_TARGET = "iOS"
                             APP_EXT = "ipa"
                             BUILD_NAME = "${GAME_NAME}"
-                            BUILD_CL = "-executeMethod TinyWizard.Core.Editor.EditorMenus.BuildIOSDevelop"
+                            BUILD_CL = "-executeMethod TinyWizard.Core.EditorBuild.BuildIOS"
                             ADDRESSABLES_FOLDER = "iOS"
                             break
                         case "IOSRelease":
                             BUILD_TARGET = "iOS"
                             APP_EXT = "app"
                             BUILD_NAME = "${GAME_NAME}"
-                            BUILD_CL = "-executeMethod TinyWizard.Core.Editor.EditorMenus.BuildIOSRelease"
+                            BUILD_CL = "-executeMethod TinyWizard.Core.EditorBuild.BuildIOS"
                             ADDRESSABLES_FOLDER = "iOS"
                             break
                         case "IOSStaging":
                             BUILD_TARGET = "iOS"
                             APP_EXT = "app"
                             BUILD_NAME = "${GAME_NAME}"
-                            BUILD_CL = "-executeMethod TinyWizard.Core.Editor.EditorMenus.BuildIOSStaging"
+                            BUILD_CL = "-executeMethod TinyWizard.Core.EditorBuild.BuildIOS"
                             ADDRESSABLES_FOLDER = "iOS"
                             break
                         case "LinuxDevelop":
@@ -770,38 +770,38 @@ void ArchiveIOS() {
     def install_url;
     withAWS(region:'eu-west-2', credentials:'868aa55f-6aa4-4962-95d5-e00a7b95e1e1') {
         archiveArtifacts artifacts: updatePath("builds\\${currentBuild.displayName}.${APP_EXT}"), onlyIfSuccessful: true
-        def download_url = s3PresignURL(bucket: "twbr-game-server-builds-euw2", key: "TimelessRivals/${BUILD_NUMBER}/artifacts/builds/${currentBuild.displayName}.${APP_EXT}", durationInSeconds: 604800);
-        echo download_url
+        // def download_url = s3PresignURL(bucket: "twbr-game-server-builds-euw2", key: "TestIOSBuild/${BUILD_NUMBER}/artifacts/builds/${currentBuild.displayName}.${APP_EXT}", durationInSeconds: 604800);
+        // echo download_url
 
-        def manifestContent = readFile(file: updatePath("Jenkins\\manifest.plist"))
-        manifestContent = manifestContent.replace("%DOWNLOAD_URL%", "${download_url}")
-        echo manifestContent
-        writeFile(file: updatePath("Jenkins\\manifest.plist"), text: manifestContent)
+        // def manifestContent = readFile(file: updatePath("Jenkins\\manifest.plist"))
+        // manifestContent = manifestContent.replace("%DOWNLOAD_URL%", "${download_url}")
+        // echo manifestContent
+        // writeFile(file: updatePath("Jenkins\\manifest.plist"), text: manifestContent)
 
-        archiveArtifacts artifacts: updatePath("Jenkins\\manifest.plist"), onlyIfSuccessful: true
-        s3Upload(pathStyleAccessEnabled: true, 
-                        payloadSigningEnabled: true, 
-                        file: updatePath("Jenkins\\manifest.plist"), 
-                        bucket:"twbr-game-server-builds-euw2", 
-                        path: "TimelessRivals/${BUILD_NUMBER}/artifacts/Jenkins/manifest.plist",
-                        tags: '[public:yes]')
-        def manifest_url = "https://twbr-game-server-builds-euw2.s3.eu-west-2.amazonaws.com/TimelessRivals/${BUILD_NUMBER}/artifacts/Jenkins/manifest.plist"
-        echo manifest_url
+        // archiveArtifacts artifacts: updatePath("Jenkins\\manifest.plist"), onlyIfSuccessful: true
+        // s3Upload(pathStyleAccessEnabled: true, 
+        //                 payloadSigningEnabled: true, 
+        //                 file: updatePath("Jenkins\\manifest.plist"), 
+        //                 bucket:"twbr-game-server-builds-euw2", 
+        //                 path: "TestIOSBuild/${BUILD_NUMBER}/artifacts/Jenkins/manifest.plist",
+        //                 tags: '[public:yes]')
+        // def manifest_url = "https://twbr-game-server-builds-euw2.s3.eu-west-2.amazonaws.com/TestIOSBuild/${BUILD_NUMBER}/artifacts/Jenkins/manifest.plist"
+        // echo manifest_url
 
-        def htmlContent = readFile(file: updatePath("Jenkins\\install_ios.html"))
-        htmlContent = htmlContent.replace("%MANIFEST_URL%", "${manifest_url}")
-        echo htmlContent
-        writeFile(file: updatePath("Jenkins\\install_ios.html"), text: htmlContent)
+        // def htmlContent = readFile(file: updatePath("Jenkins\\install_ios.html"))
+        // htmlContent = htmlContent.replace("%MANIFEST_URL%", "${manifest_url}")
+        // echo htmlContent
+        // writeFile(file: updatePath("Jenkins\\install_ios.html"), text: htmlContent)
 
-        archiveArtifacts artifacts: updatePath("Jenkins\\install_ios.html"), onlyIfSuccessful: true
-        s3Upload(pathStyleAccessEnabled: true, 
-                        payloadSigningEnabled: true, 
-                        file: updatePath("Jenkins\\install_ios.html"), 
-                        bucket:"twbr-game-server-builds-euw2", 
-                        path: "TimelessRivals/${BUILD_NUMBER}/artifacts/Jenkins/install_ios.html",
-                        tags: '[public:yes]')
-        install_url = "https://twbr-game-server-builds-euw2.s3.eu-west-2.amazonaws.com/TimelessRivals/${BUILD_NUMBER}/artifacts/Jenkins/install_ios.html"
-        echo install_url
+        // archiveArtifacts artifacts: updatePath("Jenkins\\install_ios.html"), onlyIfSuccessful: true
+        // s3Upload(pathStyleAccessEnabled: true, 
+        //                 payloadSigningEnabled: true, 
+        //                 file: updatePath("Jenkins\\install_ios.html"), 
+        //                 bucket:"twbr-game-server-builds-euw2", 
+        //                 path: "TestIOSBuild/${BUILD_NUMBER}/artifacts/Jenkins/install_ios.html",
+        //                 tags: '[public:yes]')
+        // install_url = "https://twbr-game-server-builds-euw2.s3.eu-west-2.amazonaws.com/TestIOSBuild/${BUILD_NUMBER}/artifacts/Jenkins/install_ios.html"
+        // echo install_url
 
         if(params.ADDRESSABLES) {
             ArchiveAddressables();
