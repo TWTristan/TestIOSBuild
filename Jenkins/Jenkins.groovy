@@ -80,7 +80,7 @@ pipeline {
                     } catch (err) {
                         echo "Git repository does not exist. Cloning..."
                         deleteDir()
-                        cmd "git clone --depth 1 -b \"${params.BRANCH}\" git@github.com:tinywizardgames/tinyWizardRoyale.git ."
+                        cmd "git clone --depth 1 -b \"${params.BRANCH}\" git@github.com:TWTristan/TestIOSBuild.git ."
                     }
                     cmd "git config remote.origin.fetch +refs/heads/${params.BRANCH}:refs/remotes/origin/${params.BRANCH}"
                     cmd "git remote update"
